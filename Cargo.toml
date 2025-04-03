@@ -1,0 +1,8 @@
+[package]
+name = "pubfun"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+glob = "0.3.2"
+regex = "1.11.1"
