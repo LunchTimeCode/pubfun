@@ -1,6 +1,6 @@
+set dotenv-load
 import 'justfiles/linting.just'
 
-SERVER_PORT := "9999"
 
 
 run *args:

@@ -1,51 +1,142 @@
-use std::{io::Stdin, path::PathBuf};
+use std::path::PathBuf;
 
-use regex::Regex;
+use itertools::Itertools;
+use tree_sitter::Parser;
 
+use crate::kotlin;
+
+pub struct KtPackage {
+    package: Option<String>,
+    files: Vec<KtFile>,
+}
+
+impl KtPackage {
+    pub fn md(&self) -> String {
+        let mut files = self
+            .files
+            .iter()
+            .map(|f| f.md())
+            .collect::<Vec<String>>()
+            .join("\n");
+        files = format!(
+            "## All public API {}\n\n{}",
+            self.package.clone().unwrap_or_default(),
+            files
+        );
+        files
+    }
+}
+
+pub struct KtFile {
+    file_name: String,
+    package: Option<String>,
+    functions: Vec<KtFlatNode>,
+}
+
+impl KtFile {
+    pub fn md(&self) -> String {
+        let mut functions = self
+            .functions
+            .iter()
+            .map(|f| f.md())
+            .collect::<Vec<String>>()
+            .join("\n");
+        functions = format!("### {}\n\n{}", self.file_name, functions);
+        functions
+    }
+}
+
+pub fn packages(paths: Vec<PathBuf>) -> Vec<KtPackage> {
+    let functions = find_functions(paths);
+
+    let grouped_by_file: Vec<KtFile> = functions
+        .into_iter()
+        .group_by(|f| f.file.clone())
+        .into_iter()
+        .map(|(file_name, group)| KtFile {
+            file_name,
+            package: None,
+            functions: group.collect(),
+        })
+        .collect();
+
+    let grouped_by_package: Vec<KtPackage> = grouped_by_file
+        .into_iter()
+        .group_by(|fi| fi.package.clone())
+        .into_iter()
+        .map(|(package, group)| KtPackage {
+            package,
+            files: group.collect(),
+        })
+        .collect();
+
+    grouped_by_package
+}
+
+#[allow(unused)]
 #[derive(Debug)]
-pub struct Function {
+pub struct KtFlatNode {
     path: String,
-    range: (u32, u32),
-    content: String
+    file: String,
+    package: Option<String>,
+    content: String,
+    kdoc: Option<String>,
 }
 
-pub fn find_functions(paths: Vec<PathBuf>) -> Vec<Function> {
-    let re = Regex::new(r"pub\s+fun\s+\w+\s*\([^)]*\)\s*\{(?:[^{}]*|\{[^{}]*\})*\}").unwrap();
-    let name_re = Regex::new(r"pub\s+fun\s+(\w+)\s*\(").unwrap();
-    
-    paths.iter().map(|path| find_function(path.to_path_buf(), &re, &name_re)).flatten().collect()
+const BLOCK: &str = r#"```"#;
+
+impl KtFlatNode {
+    pub fn md(&self) -> String {
+        format!(
+            "
+
+{BLOCK}kotlin
+{}
+{}
+{BLOCK}
+
+",
+            self.kdoc.clone().unwrap_or_default(),
+            self.content
+        )
+    }
 }
 
-pub fn find_function(path: PathBuf, re: &Regex, name_re: &Regex) -> Vec<Function> {
+pub fn find_functions(paths: Vec<PathBuf>) -> Vec<KtFlatNode> {
+    let mut p = kotlin::tree::parser();
+
+    paths
+        .iter()
+        .flat_map(|path| find_function(path.to_path_buf(), &mut p))
+        .collect()
+}
+
+pub fn find_function(path: PathBuf, parser: &mut Parser) -> Vec<KtFlatNode> {
     let content = std::fs::read_to_string(&path).expect("Failed to read file");
-    
-    let path_as_str = path.to_str().unwrap();
-    
-    let mut functions = Vec::new();
-    
-    let lines: Vec<String> =  content.lines().collect();
-    
-    content.lines().into_iter().enumerate().for_each(|(i,l)|{
-       let is_pub =  l.contains("pub");
-       let is_fun =  l.contains("fun");
-       
-       if is_pub && is_fun {
-           
-           let index = if i < 10 { 0 } else { i - 10 };
-           let end = if i + 10 > content.len() { content.len() } else { i + 10 };
-      
-           let content: Vec<String> = lines[index..end];
-               
-           
-        let f =  Function {
-                 path: path_as_str.to_owned(),
-                 range: (i as u32, i as u32 + 10),
-                 content: content.to_string()
-             };
-         functions.push(f);  
-       }
-        
-    });
-    functions
-}
 
+    let file_name = path.file_name().unwrap().to_str().unwrap();
+    let path_as_str = path.to_str().unwrap();
+
+    let package = content
+        .lines()
+        .find(|line| line.starts_with("package"))
+        .map(|line| {
+            line.replace("package", "")
+                .replace(";", "")
+                .trim()
+                .to_string()
+        });
+
+    let funcs = kotlin::tree::pub_funs(parser, content.as_str());
+
+    funcs
+        .iter()
+        .map(|f| KtFlatNode {
+            path: path_as_str.to_string(),
+            package: package.clone(),
+            file: file_name.to_string(),
+            content: f.content(),
+            kdoc: f.kdoc(),
+        })
+        .collect()
+}
