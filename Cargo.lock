@@ -54,7 +54,6 @@ dependencies = [
  "cc",
  "glob",
  "itertools",
- "regex",
  "tree-sitter",
  "tree-sitter-kotlin",
 ]
