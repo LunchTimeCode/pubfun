@@ -114,9 +114,8 @@ fn find_public_functions<'a>(
 fn find_kdoc_comment<'a>(node: Node<'a>, content: &'a str) -> Option<Node<'a>> {
     let source_code = content.as_bytes();
     let mut current_node = node;
-    
+
     while let Some(prev_sibling) = current_node.prev_sibling() {
-        
         if prev_sibling.kind() == "multiline_comment"
             && prev_sibling
                 .utf8_text(source_code)

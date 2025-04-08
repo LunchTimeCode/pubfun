@@ -51,7 +51,7 @@ pub fn packages(paths: Vec<PathBuf>) -> Vec<KtPackage> {
 
     let grouped_by_file: Vec<KtFile> = functions
         .into_iter()
-        .group_by(|f| f.file.clone())
+        .chunk_by(|f| f.file.clone())
         .into_iter()
         .map(|(file_name, group)| KtFile {
             file_name,
@@ -62,7 +62,7 @@ pub fn packages(paths: Vec<PathBuf>) -> Vec<KtPackage> {
 
     let grouped_by_package: Vec<KtPackage> = grouped_by_file
         .into_iter()
-        .group_by(|fi| fi.package.clone())
+        .chunk_by(|fi| fi.package.clone())
         .into_iter()
         .map(|(package, group)| KtPackage {
             package,
