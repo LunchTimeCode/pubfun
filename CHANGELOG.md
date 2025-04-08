@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/LunchTimeCode/pubfun/compare/v0.1.2...v0.1.3) (2025-04-08)
+
+
+### Bug Fixes
+
+* ci ([946bac7](https://github.com/LunchTimeCode/pubfun/commit/946bac740805b202c2ded3e45b2fef4eb58e21fe))
+
 ## [0.1.2](https://github.com/LunchTimeCode/pubfun/compare/v0.1.1...v0.1.2) (2025-04-08)
 
 
