@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/LunchTimeCode/pubfun/compare/v0.1.1...v0.1.2) (2025-04-08)
+
+
+### Bug Fixes
+
+* create oranda page ([98e5391](https://github.com/LunchTimeCode/pubfun/commit/98e539178950cd194d92b062caf7bfbf18251281))
+
 ## [0.1.1](https://github.com/LunchTimeCode/pubfun/compare/v0.1.0...v0.1.1) (2025-04-08)
 
 

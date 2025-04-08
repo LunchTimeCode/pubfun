@@ -1,6 +1,6 @@
 [package]
 name = "pubfun"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 authors = ["Silen Celeste Locatelli", "LunchTimeCode"]
 description = "A tool to extract public functions from Kotlin files."
